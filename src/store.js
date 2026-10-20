@@ -248,7 +248,7 @@ function passReward(tier, prem) {
   if (!prem) {
     if (tier === 10) return { trail: 'bubble' };
     if (tier === 30) return { gems: 30 };
-    return tier % 5 === 0 ? { gems: 10 } : { pearls: 100 + tier * 10 };
+    return tier % 5 === 0 ? { gems: 10 } : { pearls: 40 + tier * 5 }; // 10/21 진주 하향: 100+10단계 → 40+5단계(판 수입보다 패스가 더 주던 것)
   }
   if (tier === 15) return { trail: 'sakura' };
   if (tier === 25) return { trail: 'fire' };
@@ -440,6 +440,7 @@ function markSpot(id, x, y, r, w, h) { const s = spotAt(x, y), m = ctx.getTransf
 function coachOnce(id, o) {
   save.coach = save.coach || {};
   if (save.coach[id] || coach || (typeof LAB !== 'undefined' && LAB.noCoach)) return false;
+  if (o.state && o.state !== state) return false; // 그 화면이 아니면(레벨 업 고르기·멈춤 중 등) 띄우지 않음 — 다음에 다시(10/21 보너스 바다+레벨 업 겹쳐 멈춘 버그)
   coach = { id, t: 0, wait: 'tap', ...o };
   snd('ready', 0.7); haptic(15);
   return true;

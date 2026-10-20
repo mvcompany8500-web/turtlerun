@@ -74,7 +74,7 @@ function drawBackground(n, d) {
   const inRun = typeof G !== 'undefined' && G && G.run && (state === 'play' || state === 'pause' || state === 'bless' || state === 'revive' || state === 'dead' || state === 'clear');
   const v2 = IMG['spr_bgv2_' + th.world], bgi = v2 && ready(v2) ? v2 : IMG['spr_bg' + th.world]; // 판 밖(준비 창·상점 뒤)도 첫 화면 화풍 배경 // 판 배경은 첫 화면과 같은 화풍(있으면)
   if (ready(bgi)) {
-    const bh = H + 40, bw = bh * bgi.naturalWidth / bgi.naturalHeight, off = (d * 0.22) % (bw * 2);
+    const bh = H + 40, bw = bh * bgi.naturalWidth / bgi.naturalHeight, off = (d * 0.22 + (n === ENDLESS ? 0 : ((n - 1) % 10) * bw * 0.37)) % (bw * 2); // 같은 세계라도 판마다 배경 그림의 다른 곳부터(10/21)
     const src = inRun ? bgDepth(bgi, bh) : bgi; // 판 중엔 살짝 흐리고 또렷한 색(앞이 튀어나오게)
     for (let x = -off, i = 0; x < W + bw; x += bw, i++) {
       ctx.save(); ctx.translate(x + bw / 2, H / 2); if (i % 2) ctx.scale(-1, 1); ctx.drawImage(src, -bw / 2 - 1, -bh / 2, bw + 2, bh); ctx.restore(); // 이음새 1px 겹침

@@ -20,7 +20,7 @@ const MISSION_TYPES = [
 function newMission(exclude) {
   const m = pick(MISSION_TYPES.filter((t) => !exclude.includes(t.type) && (save.unlocked || 1) >= (t.from || 0)));
   const gi = (Math.random() * 3) | 0;
-  return { type: m.type, goal: m.goals[gi], prog: 0, reward: [25, 45, 70][gi], done: false };
+  return { type: m.type, goal: m.goals[gi], prog: 0, reward: [15, 30, 45][gi], done: false };
 }
 function ensureMissions() { while (save.missions.length < 3) save.missions.push(newMission(save.missions.map((m) => m.type))); }
 const missionText = (m) => (MISSION_TYPES.find((t) => t.type === m.type) || MISSION_TYPES[0]).text(m.goal);
@@ -76,8 +76,8 @@ const chestGoal = () => (save.chests + 1) * 10;
 const chestReady = () => totalStars() >= chestGoal();
 function openChest() {
   if (!chestReady()) { sfx.no(); toast(`별 ${chestGoal()}개를 모으면 열려요 (지금 ${totalStars()}개)`); return; }
-  save.chests++; save.eggs += 80; persist();
-  if (!showBox(save.chests % 5 === 0 ? 'gold' : 'silver', '별 상자', 80)) { fountain(W / 2, 40, 80); confetti(60); sfx.crack(); haptic([30, 30, 80]); toast('별 상자! 진주 +80', C.yellow); }
+  save.chests++; save.eggs += 50; persist();
+  if (!showBox(save.chests % 5 === 0 ? 'gold' : 'silver', '별 상자', 50)) { fountain(W / 2, 40, 50); confetti(60); sfx.crack(); haptic([30, 30, 80]); toast('별 상자! 진주 +50', C.yellow); }
 }
 // 상자 열기 연출(알 합치기 게임의 나무·은·금 상자 그림): 떨어져 통통 → 흔들흔들 → 펑 열림 + 진주 숫자 굴러 오름 → 누르면 진주가 위 진주 칸으로
 let boxShow = null;
@@ -516,7 +516,8 @@ function drawMap() {
     const t1 = `${s}번 바다 · ${STAGES[s].name}`;
     text(t1, TL, 468, fit(t1, 20, 14), '#ffffff', { align: 'left', stroke: 'rgba(8,30,60,.8)', lw: 5 }); // 유리 판 위에서도 또렷하게
     for (let k = 0; k < 3; k++) drawStar(TL + 9 + k * 23, 498, 9, k < (save.stars[s] || 0));
-    text(save.best[s] ? `최고 ${save.best[s]}%` : '처음 도전!', TL + 80, 498, 14, '#e8f6ff', { align: 'left', body: true, stroke: 'rgba(8,30,60,.75)', lw: 4 });
+    if (save.diff === 2) text(save.crown[s] ? '어려움 · 깨면 35% 장비' : '어려움 · 처음 깨면 장비 확정', TL + 80, 498, 14, '#ffd54a', { align: 'left', body: true, stroke: 'rgba(8,30,60,.75)', lw: 4 }); // 어려움 보상 = 장비
+    else text(save.best[s] ? `최고 ${save.best[s]}%` : '처음 도전!', TL + 80, 498, 14, '#e8f6ff', { align: 'left', body: true, stroke: 'rgba(8,30,60,.75)', lw: 4 });
   }
   DIFFS.forEach((d, i) => button(R - 538 + i * 92, 459, 78, 46, d.name, () => { save.diff = i; persist(); sfx.click(); }, { size: 15, kind: save.diff === i ? 'primary' : 'soft' }));
   // 인기 게임 「플레이」 단추처럼: 노랑→주황, 두꺼운 아래 그림자, 1.2초 맥박, 3초마다 빛줄이 지나감
@@ -729,6 +730,7 @@ function drawProbInfo() {
     ['선물 상자', '#9fe3ff', ['무료 · 3시간마다 · 진주 20~60개 중 하나(각 약 2.4%)']],
     ['? 상자(판 중)', '#9fe3ff', ['무료 · 아이템 40% / 진주 60%(황금 +5 30% · +3 70%)', '아이템은 그 바다에서 나오는 것끼리 같은 확률']],
     ['신비한 조개', '#ff8ad8', ['보석으로 여는 뽑기 · 항목별 확률·천장은 상점 「신비한 조개 › 확률 정보」', '보스 유물: 보스를 이기면 5%']],
+    ['어려움 보상', '#ffd54a', ['무료 · 어려움으로 처음 깨면 장비 확정: 희귀 60% · 영웅 32% · 전설 8%', '다시 깨면 35%: 일반 40% · 희귀 38% · 영웅 18% · 전설 4% · 등급 안에서 같은 확률']],
     ['확률 없는 것', 'rgba(255,255,255,.7)', ['별 상자 · 보석 · 옷 · 보물 · 꼬리 · 패스 · 조각으로 받기']],
   ];
   const lh = fs(13) * 1.45, X = 150, CW = 660, TW = 132;
@@ -1599,7 +1601,7 @@ function drawClear() {
   }
   cardDivider(RC.y + 220);
   // 받은 것(표): 진주는 굴러 오르고, 보너스는 하나씩 붙음 — 보너스 칸이 판 폭을 넘으면 다음 줄로
-  rewardRow(RC.y + 238, (x, y) => drawPearl(x, y, 20), '진주', `+${G.eggShown || 0}`, C.yellow, G.diffBonus ? `난이도 ${G.diffBonus > 0 ? '+' : ''}${G.diffBonus}` : '');
+  rewardRow(RC.y + 238, (x, y) => drawPearl(x, y, 20), '진주', `+${G.eggShown || 0}`, C.yellow, G.hardGot ? `어려움 보상 「${G.hardGot.name}」` : G.hardGot === false ? '어려움 보상 · 장비는 다음 기회' : G.diffBonus ? `난이도 ${G.diffBonus > 0 ? '+' : ''}${G.diffBonus}` : '');
   // 보너스 칸은 한 줄만: 넘치면 남은 것을 「그 밖 +합계」 하나로 묶음(아래 줄·단추와 안 겹치게)
   const shownS = (G.settle || []).filter((it, i) => endT - (EGG_AT + 0.5 + i * 0.35) >= 0), chips = [];
   { let used = 0; const room = RR - (RL + 34);

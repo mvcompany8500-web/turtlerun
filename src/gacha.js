@@ -116,6 +116,17 @@ function equipGear(g) {
   else { gs.eq[g.kind] = g.k; shopSay(`${g.name} 장착! ${g.desc || ''}`); if (g.kind === 'form') POSE_KEYS.forEach((k) => outfitPose(k)); }
   persist(); sfx.click(); haptic(15);
 }
+// 어려움 보상(10/21 대표 지시: 어려움은 진주 대신 아이템): 어려움으로 깨면 장비(변신·무기·치장) — 진주·유물은 안 나옴, 천장 수에 안 셈
+// 그 바다를 어려움으로 처음 깨면 반드시 1개(희귀 이상), 다시 깨면 35% 확률로 1개. 중복이면 조각. 확률 정보 창에 같은 숫자
+const HARD_DROP = { first: { r: 60, e: 32, l: 8 }, again: { pct: 35, odds: { c: 40, r: 38, e: 18, l: 4 } } };
+function hardDrop(first) {
+  if (!first && Math.random() * 100 >= HARD_DROP.again.pct && !(window.LAB && LAB.hardDrop)) return null;
+  const odds = first ? HARD_DROP.first : HARD_DROP.again.odds; let x = Math.random() * Object.values(odds).reduce((a, b) => a + b, 0), t = 'c';
+  for (const k in odds) { x -= odds[k]; if (x < 0) { t = k; break; } }
+  const pool = GEAR.filter((g) => g.r === t && g.kind !== 'relic' && g.kind !== 'cur'); if (!pool.length) return null;
+  const g = pick(pool), res = grant(g), gs = gsave(); gs.relicQ.push({ k: g.k, shards: res.shards, how: 'hard' }); persist(); // 지도에서 여는 연출(보스 유물과 같은 줄)
+  return g;
+}
 // 보스를 이기면 5% — 결과는 바로 저장(판을 끝내지 않고 나가도 안 잃게), 지도에서 신화 연출
 function relicRoll(bossKey) {
   const k = BOSS_RELIC[bossKey]; if (!k || G.relicRolled) return;
@@ -127,7 +138,7 @@ function relicRoll(bossKey) {
 }
 function openRelicQ() {
   const gs = gsave(), q = gs.relicQ.shift(); persist(); if (!q) return;
-  gacha.rv = { list: [{ g: gearOf(q.k), isNew: !q.shards, shards: q.shards }], i: 0, t0: performance.now(), shown: 0, taps: 0, open: false, multi: false, how: 'relic' };
+  gacha.rv = { list: [{ g: gearOf(q.k), isNew: !q.shards, shards: q.shards }], i: 0, t0: performance.now(), shown: 0, taps: 0, open: false, multi: false, how: q.how || 'relic' };
 }
 
 // ───────── 장비 그림: 아이콘 · 머리 치장 · 몸 둘레 빛 ─────────
@@ -317,7 +328,7 @@ function drawRevealOne(rv, t) {
     const sc = 1 + (st < 0.2 ? (0.2 - st) * 0.8 : 0) + rv.shown * 0.04;
     if (!drawImg(IMG.spr_clam_shut, 480, H / 2 + 10, 230 * sc, sh)) icon('e_gift', 480, H / 2, 180 * sc, sh);
     text(RARITY[r].name, 480, 92, 38, col, { lw: 8 });
-    text(rv.how === 'relic' ? '보스가 떨어뜨린 보물이에요!' : '톡톡 눌러 보세요!', 480, H - 60, 20, '#ffffff', { stroke: false });
+    text(rv.how === 'relic' ? '보스가 떨어뜨린 보물이에요!' : rv.how === 'hard' ? '어려움 보상! 톡톡 눌러 보세요' : '톡톡 눌러 보세요!', 480, H - 60, 20, '#ffffff', { stroke: false });
     if (rv.multi === false && rv.list.length === 1 && rv.how !== 'relic') text('누를 때마다 더 좋은 색이 될지도…', 480, H - 32, 14, C.sub, { body: true, stroke: false });
     return;
   }

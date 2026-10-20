@@ -194,6 +194,7 @@ function update(dt) {
   while (toasts.length && toasts[0].t <= 0) toasts.shift();
   if (toasts.length > 6) toasts.splice(0, toasts.length - 6);
   if (PORTRAIT) { autoPause(); return; }
+  if (coach && coach.state && coach.state !== state) coach = null; // 안내가 다른 화면(판) 것이면 접음 — 고르기 창 위에 남아 누르기를 다 먹던 버그(10/21)
   if (state === 'pause' || state === 'bless') return;
   if (state === 'dead' && G) G.deadT += dt;
   if (state === 'clear' || state === 'ending') { endT += dt; if (state === 'clear') updateClear(); }

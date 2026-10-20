@@ -151,7 +151,7 @@ const BLESSINGS = [
 const DIFFS = [
   { name: '쉬움', speed: 0.85, gap: 1.25, eggs: 0.8, elite: 0, revive: 0.5 },
   { name: '보통', speed: 1, gap: 1, eggs: 1, elite: 0.08, revive: 1 },
-  { name: '어려움', speed: 1.12, gap: 0.82, eggs: 1.5, elite: 0.3, revive: 1.5 },
+  { name: '어려움', speed: 1.2, gap: 0.74, eggs: 1, elite: 0.45, revive: 1.5 }, // 10/21: 더 빠르고 촘촘·정예 많이, 보상은 진주 1.5배 대신 장비(HARD_DROP, src/gacha.js)
 ];
 
 // ───────── 옷 · 펫 · 실력 ─────────

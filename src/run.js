@@ -390,11 +390,12 @@ const PAT_BY = Object.fromEntries(PATS.map((p) => [p[0], p]));
 // 판마다 다른 코스(인기 게임 에피소드·인기 게임 판처럼 「그 판만의 장치」): sig = 대표 패턴 배수, enter = 몹이 나타나는 모습, tempo = 패턴 사이 간격
 // 판 한가운데쯤엔 대표 패턴 두 개로 만든 연속 구간(그 판의 하이라이트)이 한 번 나옴
 const STAGE_STYLE = {
-  1: { sig: { eggs: 2, hop: 1.5, pearlWave: 3 }, tempo: 1.1 },
-  2: { sig: { kelpSteps: 4, shark: 1.5, climb: 1 }, enter: 'rise' },
-  3: { sig: { treasure: 2, chest: 2, rockRow: 1, jarRow: 2 }, enter: 'drop', tempo: 1.12 }, // 초반: 바위 위주는 서툰 실력 성공률이 절반으로 떨어져서 보물 위주(봇 9/12)
-  4: { sig: { stomp: 4, jellyField: 3 }, enter: 'pop' },
-  5: { sig: { rockRow: 3, hop2: 2 }, enter: 'rise' },
+  // 1~5탄(10/21 대표 「3탄 하면서 이미 지루」): 탄마다 새 지형 하나를 앞에서 먼저 보여 주고(intro), 기본 패턴은 줄이고, 판을 세 구간으로 나눠 구간마다 주인공 패턴이 바뀜
+  1: { sig: { pearlWave: 3, eggs: 2, hop: 1.5, pitHop: 1.5 }, tempo: 1.1, intro: 'pitHop' },
+  2: { sig: { kelpSteps: 4, shark: 3, stairs: 1.5 }, enter: 'rise', intro: 'kelpSteps' },
+  3: { sig: { jarRow: 3, treasure: 2.5, puffer: 2, chest: 1.5 }, enter: 'drop', tempo: 1.12, intro: 'jarRow' }, // 바위·구덩이 연속 위주는 서툰 실력 성공률이 절반이라 뺌(실험실 10/21)
+  4: { sig: { jellyField: 3, stairsUp: 2.5, stomp: 2, eel: 2 }, enter: 'pop', intro: 'jellyField' },
+  5: { sig: { duckLong: 2.5, duck: 1.5, hop: 1.5, rockRow: 1 }, enter: 'rise', intro: 'duckLong' }, // 보스 판: 바위 위주는 서툰 실력이 못 깸(실험실 10/21) → 숙이기 판(긴 굴)으로
   6: { sig: { spikeRhythm: 4, pearlWave: 2, zigzag: 2 }, enter: 'pop', wall: 1 },
   7: { sig: { duck: 2, duckJump: 3, slideTunnel: 3 }, enter: 'drop' },
   8: { sig: { highRoad: 3, eggs: 2 }, enter: 'rise' },
@@ -441,6 +442,7 @@ const STAGE_STYLE = {
   49: { sig: { stairs: 3, treasure: 2, pearlWave: 2, jarRow: 2 }, enter: 'swoop', wall: 2 },
   50: { sig: { gauntlet: 2, duckJump: 2, spikeRhythm: 2 }, enter: 'drop' },
 };
+const PAT_NAME = { pitHop: '구멍 건너기', kelpSteps: '해초 계단', jarRow: '항아리 줄', jellyField: '해파리 가시밭', rockRow: '바위 두 개', duckLong: '긴 숙이기 굴' }; // 판 앞에서 처음 보여 줄 때 이름
 const NEW_PATS = new Set(['kelpSteps', 'duckJump', 'jellyField', 'rockRow', 'zigzag', 'treasure', 'pearlWave', 'spikeRhythm', 'lowCeil', 'jarRow', 'slideTunnel']); // ultWall 은 벽 판에만(끝없는 바다에도 가끔)
 // 판 레벨(0 → 1): 1번 바다 0, 50번 바다 1, 끝없는 바다는 거리에 따라 — 발판 폭·간격·높이·단수가 이걸로 어려워짐
 const diffK = () => (G.cfg.endless ? Math.min(1, G.dist / 20000) : clamp((G.n - 1) / 49, 0, 1));
@@ -458,7 +460,9 @@ function choosePat() {
   // 새 몬스터 판이면 그 몬스터 패턴을 자주 · 그 판 대표 패턴도 자주
   const fresh = !G.cfg.endless && STAGES[G.n].fresh;
   let sum = 0;
-  const ws = list.map((p) => { const w = p[2] * (fresh && p[4] === fresh ? 4 : 1) * (p[1] > n - 4 && p[1] > 1 && p[1] < 99 ? 1.4 : 1) * (sig[p[0]] || 1); sum += w; return w; });
+  const keys = Object.keys(sig), focus = !G.cfg.endless && keys.length ? keys[Math.min(2, Math.floor(G.dist / G.cfg.length * 3)) % keys.length] : null; // 구간(앞·가운데·뒤)마다 주인공 패턴이 바뀜(인기 게임·인기 게임 구간 조각)
+  const plain = !G.cfg.endless && n >= 2 && keys.length; // 2탄부터: 그 판 대표가 아닌 1탄 기본 패턴은 덜 나옴(판마다 다른 맛)
+  const ws = list.map((p) => { const w = p[2] * (fresh && p[4] === fresh ? 4 : 1) * (p[1] > n - 4 && p[1] > 1 && p[1] < 99 ? 1.4 : 1) * (sig[p[0]] || 1) * (plain && p[1] === 1 && !sig[p[0]] && p[0] !== 'box' ? 0.4 : 1) * (p[0] === focus ? 2 : 1); sum += w; return w; });
   let r = Math.random() * sum;
   for (let i = 0; i < list.length; i++) { r -= ws[i]; if (r <= 0) return list[i]; }
   return list[0];
@@ -474,6 +478,7 @@ function runCourse() {
     if (G.tut && G.tut.seq.length) pat = PAT_BY[G.tut.seq.shift()];
     else if (G.setQ && G.setQ.length) pat = PAT_BY[G.setQ.shift()];
     else pat = (window.LAB && window.LAB_PAT && PAT_BY[window.LAB_PAT]) || choosePat(); /* 실험실: 한 지형만 반복해 깰 수 있는지 잼 */
+    const intro = styleOf().intro; if (intro && !G.tut && !G.introDone && !cfg.endless && G.dist + x >= cfg.length * 0.15) { G.introDone = true; (G.setQ = G.setQ || []).unshift(intro, intro); } // 이 판의 새 지형을 앞에서 두 번 먼저
     if (!G.tut && !G.setDone && !cfg.endless && G.dist + x >= cfg.length * 0.5) { G.setDone = true; G.setQ = setPiece(); } // 판 한가운데: 그 판만의 연속 구간
     const wn = styleOf().wall || 0; G.wallDone = G.wallDone || 0;
     if (!G.tut && !cfg.endless && G.wallDone < wn && G.dist + x >= cfg.length * (wn === 1 ? 0.62 : [0.35, 0.75][G.wallDone])) { G.wallDone++; (G.setQ = G.setQ || []).unshift('ultWall'); } // 벽 판: 정해진 자리에 벽
@@ -482,6 +487,7 @@ function runCourse() {
     let len = pat[3](x);
     len += snapToBeat(before); // 누를 때가 음악 박에 오게
     G.lastPat = pat[0]; G.pats++;
+    if (pat[0] === styleOf().intro && G.introDone && !G.introShown) { G.introShown = true; pop(W / 2, H * 0.42, `새 지형! ${PAT_NAME[pat[0]] || ''}`, '#7cf0ff', 30, true); snd('ready', 0.6); }
     // 글자는 정해진 거리마다 높은 곳에
     if (!cfg.endless && G.letterAt.length && G.dist + x >= G.letterAt[0]) { G.letterAt.shift(); letter(x + len * 0.5, GROUND - 230 - rand(0, 30)); }
     if (cfg.endless && Math.random() < 0.06) letter(x + len * 0.5, GROUND - 240);

@@ -462,6 +462,7 @@ function runXp(v) {
 function tryOpenLevelUp() {
   if (!G.lvPending || state !== 'play' || cine || G.won || G.p.dead || G.boosting > 0 || G.enterT > 0 || freeze > 0.05) return false;
   if (G.boss && G.boss.st === 'fall') return false;
+  if (G.bonus || coach || cutin || (scr.reacts || []).some((r) => r.tier >= 3 && r.t < r.dur)) return false; // 보너스 바다·안내·큰 글자 연출이 끝난 뒤에 고르기(겹치면 멈춘 것처럼 보임 — 10/21)
   G.lvPending--;
   const pool = ABIL.filter((a) => abStar(a.k) < a.max && !(a.k === 'triple' && hasPerk('triple')));
   G.bless = shuffle(pool).slice(0, 3).map((a) => ({ ...a, lv: true, star: abStar(a.k) }));

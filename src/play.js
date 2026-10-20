@@ -71,7 +71,7 @@ function earn(k, v) { if (G.run && ['egg', 'gold', 'drop', 'rain'].includes(k)) 
 function bank(cleared) {
   if (G.banked) return;
   G.banked = true;
-  if (cleared) { G.clearBonus = 8 + Math.floor((G.n === ENDLESS ? 0 : G.n) * 0.6); earn('clear', G.clearBonus); } // 도착 보너스: 뒤 바다일수록 조금 더
+  if (cleared) { G.clearBonus = 5 + Math.floor((G.n === ENDLESS ? 0 : G.n) * 0.4); earn('clear', G.clearBonus); } // 도착 보너스: 뒤 바다일수록 조금 더
   G.settle = [];
   save.bestScore = save.bestScore || {}; G.score = Math.round(G.score); G.prevBestScore = save.bestScore[G.n] || 0; G.newBestScore = G.score > G.prevBestScore && G.prevBestScore > 0; if (G.score > G.prevBestScore) save.bestScore[G.n] = G.score;
   if (save.helpShield === G.n) save.helpShield = null; // 도움 방패는 한 판만
@@ -80,7 +80,7 @@ function bank(cleared) {
     if (cleared) delete save.failRow[G.n];
     else if (progress() >= 0.05 || G.t > 8) { save.failRow[G.n] = (save.failRow[G.n] || 0) + 1; if (save.failRow[G.n] >= 2) { save.helpShield = G.n; G.helpNext = true; } }
   }
-  if (cleared && G.run) { const pc = Math.round((Math.max(0, G.en) / G.maxEn) * 100), v = Math.min(20, Math.round(G.en / 5)); if (v) { earn('settle', v); G.settle.push({ s: `남은 기운 ${pc}%`, v }); } if (G.beatBest >= 5) { earn('settle', 5); G.settle.push({ s: `박자 최고 ${G.beatBest}연속`, v: 5 }); } if (G.stomps) { const v = Math.min(10, G.stomps); earn('settle', v); G.settle.push({ s: `밟기 ${G.stomps}번`, v }); } } // 끝나면 하나씩 반짝이며 더해짐
+  if (cleared && G.run) { const pc = Math.round((Math.max(0, G.en) / G.maxEn) * 100), v = Math.min(10, Math.round(G.en / 10)); if (v) { earn('settle', v); G.settle.push({ s: `남은 기운 ${pc}%`, v }); } if (G.beatBest >= 5) { earn('settle', 5); G.settle.push({ s: `박자 최고 ${G.beatBest}연속`, v: 5 }); } if (G.stomps) { const v = Math.min(5, G.stomps); earn('settle', v); G.settle.push({ s: `밟기 ${G.stomps}번`, v }); } } // 끝나면 하나씩 반짝이며 더해짐
   G.diffBonus = Math.round(G.eggs * (G.D.eggs - 1));
   G.eggs = Math.max(0, G.eggs + G.diffBonus);
   save.eggs += G.eggs;
@@ -98,6 +98,7 @@ function bank(cleared) {
   if (cleared) {
     G.starGot = [true, G.eggsGot >= Math.ceil(G.eggsSpawned * 0.7), G.hits === 0];
     save.stars[G.n] = Math.max(save.stars[G.n] || 0, G.starGot.filter(Boolean).length);
+    G.hardGot = null; if (save.diff === 2 && G.n !== ENDLESS && typeof hardDrop === 'function') G.hardGot = hardDrop(!save.crown[G.n]) || false; // 어려움 보상 = 장비(진주 배수 없음)
     if (save.diff === 2) save.crown[G.n] = true;
     if (G.n < LAST && save.unlocked < G.n + 1) { save.unlocked = G.n + 1; G.newUnlock = true; if (FIRST_GIFTS[G.n]) (save.giftQ = save.giftQ || []).push(G.n); } // 처음 깬 바다 선물(지도에서 상자로)
     track('clear');
@@ -599,7 +600,7 @@ function collectEgg(e) {
   }
   setFace('happy', 0.35); runXp(3);
   const mult = (G.feverT > 0 ? 2 : 1) * (G.eff.double > 0 ? 2 : 1);
-  const v = Math.round((e.gold ? (e.bonus ? 1 : G.run ? 3 : 5) : 1) * mult * (G.run && hasPerk('legend') ? 1.2 : 1)) || 1;
+  const v = Math.round((e.gold ? (e.bonus ? 1 : G.run ? 2 : 5) : 1) * mult * (G.run && hasPerk('legend') ? 1.2 : 1)) || 1;
   earn(e.loose ? 'drop' : e.bonus ? 'rain' : e.gold ? 'gold' : 'egg', v); addScore(e.gold ? (hasTr('hook') ? 6000 : 3000) : 500);
   if (G.feverT > 0) G.feverEggs += v;
   if (!e.loose && !e.bonus) G.eggsGot++;
